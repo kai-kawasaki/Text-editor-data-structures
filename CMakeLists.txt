@@ -13,7 +13,10 @@ FetchContent_MakeAvailable(SFML)
 add_executable(main src/main.cpp
         src/gapBuffer.cpp
         src/gapBuffer.h
-        src/gapBuffer.h)
+        src/gapBuffer.h
+        src/pieceTable.cpp
+        src/pieceTable.h
+        src/pieceTable.h)
 target_link_libraries(main PRIVATE sfml-graphics)
 target_compile_features(main PRIVATE cxx_std_17)
 
