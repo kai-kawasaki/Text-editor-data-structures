@@ -16,6 +16,7 @@ public:
     void insert(int pos, string str);
     void remove(int pos, int length);
     void printTable();
+    void loadFile(string file);
 };
 
 

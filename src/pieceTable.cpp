@@ -1,6 +1,7 @@
 #include "pieceTable.h"
 #include <string>
 #include <vector>
+#include <fstream>
 
 void pieceTable::append(vector<char> &vec, string str) {
     for (char i : str) {
@@ -105,4 +106,15 @@ void pieceTable::printTable() {
         //cout << endl;
     }
     cout << endl;
+}
+
+void pieceTable::loadFile(string file) {
+    ifstream input (file);
+    string buffer;
+    if (input.is_open()) {
+        while(getline(input, buffer)) {
+            append(orig, buffer);
+        }
+    }
+    pieces[0][1] = orig.size();
 }
