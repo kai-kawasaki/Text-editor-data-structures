@@ -1,4 +1,4 @@
-#include "../include/GapBuffer.h"
+#include "gapBuffer.h"
 #include <iostream>
 #include <fstream>
 
