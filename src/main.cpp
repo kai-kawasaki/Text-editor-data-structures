@@ -1,8 +1,57 @@
 #include <iostream>
 #include <SFML/Graphics.hpp>
 #include <string>
+#include <chrono>
+#include "gapBuffer.h"
+#include "pieceTable.h"
 
 using namespace std;
+using namespace chrono;
+
+class Timer
+{
+private:
+    time_point<system_clock> startTime;
+    time_point<system_clock> endTime;
+    bool running = false;
+public:
+    void start() {
+        startTime = system_clock::now();
+        running = true;
+    }
+
+    void stop()
+    {
+        endTime = system_clock::now();
+        running = false;
+    }
+
+    double elapsedMicroseconds()
+    {
+
+        if(running)
+        {
+            endTime = system_clock::now();
+        }
+
+        return duration_cast<microseconds >(endTime - startTime).count();
+    }
+
+    double elapsedMilliseconds()
+    {
+
+        if(running)
+        {
+            endTime = system_clock::now();
+        }
+
+        return duration_cast<milliseconds>(endTime - startTime).count();
+    }
+
+    int elapsedSeconds() {
+        return elapsedMilliseconds() / 1000;
+    }
+};
 
 class Button {
 public:
@@ -49,12 +98,48 @@ class UnnamedClass {
 public:
     UnnamedClass() {}
 
-    void performActionA() {
+    void performActionA(int &tableTime, int &bufferTime, pieceTable *table, GapBuffer *buffer) {
         // Perform action A
+        Timer timer;
+        timer.start();
+        string testString = "TEST STRING";
+        for (int i = 0; i < 1000; i++) {
+            table->insert(rand()%100, (testString.substr(0,rand()%10)));
+        }
+        tableTime = timer.elapsedMicroseconds();
+        timer.start();
+        for (int i=0; i < 1000; i++) {
+            int randing = rand()%1000;
+            for (int i=0; i<randing; i++) {
+                buffer->move_right();
+            }
+            for (int i=0; i<rand()%10; i++) {
+                buffer->insert_char(testString[i]);
+            }
+            for (int i=0; i<randing; i++) {
+                buffer->move_left();
+            }
+        }
+        bufferTime = timer.elapsedMicroseconds();
     }
 
-    void performActionB() {
+    void performActionB(int &tableTime, int &bufferTime, pieceTable *table, GapBuffer *buffer) {
         // Perform action B
+        Timer timer;
+        int randing = rand()%10;
+        timer.start();
+        for (int i = 0; i < 1000; i++) {
+            table->remove(rand()%100, (randing));
+        }
+        tableTime = timer.elapsedMicroseconds();
+        timer.start();
+        for (int i=0; i < 10; i++) {
+            for (int x=0; x<randing; x++) {
+                buffer->delete_char();
+            }
+        }
+
+        bufferTime = timer.elapsedMicroseconds();
     }
 
 
@@ -73,13 +158,28 @@ void processInput(string& inputstring) {
 }
 
 int main() {
+    pieceTable *table = new pieceTable();
+    GapBuffer *buffer = new GapBuffer();
+    Timer timer;
+    timer.start();
+    table->loadFile("files/input.txt");
+    double tableLoadTime = timer.elapsedMicroseconds();
+    timer.start();
+    buffer->from_file("files/input.txt");
+    double bufferLoadTime = timer.elapsedMicroseconds();
+    buffer->print();
+    int tableAddTime;
+    int bufferAddTime;
+    int tableRemoveTime;
+    int bufferRemoveTime;
+
     sf::RenderWindow window(sf::VideoMode(960, 720), "Two Button Window");
     sf::Font font;
     if (!font.loadFromFile("files/font.ttf")) {
         std::cout << "Error loading font file" << std::endl;
         return false;
     }
-    sf::Text inputHeading("Input:", font, 24);
+    sf::Text inputHeading("File load time (microseconds):", font, 24);
     inputHeading.setPosition(50, 50);
     inputHeading.setFillColor(sf::Color::Black);
 
@@ -94,8 +194,8 @@ int main() {
     inputText.setFillColor(sf::Color::Black);
 
     // Buttons
-    Button buttonA(50, 160, 150, 50, font, "Button A");
-    Button buttonB(250, 160, 150, 50, font, "Button B");
+    Button buttonA(50, 160, 150, 50, font, "Add random");
+    Button buttonB(250, 160, 150, 50, font, "Remove random");
 
     // Output box
     sf::Text outputHeading("Average Time:", font, 24);
@@ -131,11 +231,13 @@ int main() {
                 }
 
                 if (buttonA.isMouseOver(window)) {
-                    obj.performActionA();
-                    outputText.setString(getAverageTimeString());
+                    obj.performActionA(tableAddTime, bufferAddTime, table, buffer);
+                    outputText.setString("Piece table average time: " + to_string(tableAddTime) + "ms\nGap buffer average time: " +
+                                                 to_string(bufferAddTime) + "ms");
                 } else if (buttonB.isMouseOver(window)) {
-                    obj.performActionB();
-                    outputText.setString(getAverageTimeString());
+                    obj.performActionB(tableRemoveTime, bufferRemoveTime, table, buffer);
+                    outputText.setString("Piece table average time: " + to_string(tableRemoveTime) + "ms\nGap buffer average time: " +
+                                         to_string(bufferRemoveTime) + "ms");
                 }
             }
             else if (event.type == sf::Event::TextEntered && isInputActive) {
@@ -144,9 +246,10 @@ int main() {
                 } else if (event.text.unicode < 128) {
                     input += static_cast<char>(event.text.unicode);
                 }
-                inputText.setString(input);
+                //inputText.setString(input);
             }
         }
+        inputText.setString("Piece Table: " + to_string((int)tableLoadTime) + "ms, Gap Buffer: " + to_string((int)bufferLoadTime) + "ms");
 
         window.clear(sf::Color(240, 240, 240));
 

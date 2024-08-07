@@ -55,7 +55,7 @@ bool GapBuffer::move_right()
 
 bool GapBuffer::delete_char()
 {
-	if(gap_tail == buff_tail)
+	if(gap_tail == buff_tail || gap_head==buff_head)
 	{
 		return false;
 	}
